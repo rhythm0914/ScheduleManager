@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Manager</title>
+    <style>
+        /* General styles for the body */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        /* Centered headings */
+        h1, h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* Container for form and schedule */
+        .form-container, .schedule-container {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+
+        /* Form labels and inputs */
+        label {
+            display: block;
+            margin: 5px 0;
+            font-weight: normal;
+            color: #555;
+        }
+
+        input[type="text"], input[type="date"], input[type="time"] {
+            width: calc(100% - 16px);
+            padding: 8px;
+            margin: 4px 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Button styles */
+        button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 8px;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+
+        td button {
+            padding: 4px 8px;
+            background: #dc3545;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        td button:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Form to Add/Update Subject -->
+    <div class="form-container">
+        <h2>Manage Your Exam Schedule</h2>
+        <label for="subject_name">Subject Name:</label>
+        <input type="text" id="subject_name">
+        
+        <label for="date">Date:</label>
+        <input type="date" id="date">
+        
+        <label for="time">Time:</label>
+        <input type="time" id="time">
+        
+        <label for="section">Section:</label>
+        <input type="text" id="section">
+        
+        <label for="description">Description:</label>
+        <input type="text" id="description">
+        
+        <button id="action-button" onclick="handleAction()">Add Subject</button>
+    </div>
+
+    <!-- Schedule Display -->
+    <div class="schedule-container">
+        <h2>Your Exam Schedule</h2>
+        <table id="schedule-list">
+            <thead>
+                <tr>
+                    <th>Subject Name</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Section</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Initialize the schedule array from local storage or empty array
+        let schedule = JSON.parse(localStorage.getItem('schedule')) || [];
+        let editIndex = null; // Track the index of the item being edited
+
+        function handleAction() {
+            if (editIndex === null) {
+                addSubject();
+            } else {
+                saveChanges();
+            }
+        }
+
+        function addSubject() {
+            const subjectName = document.getElementById('subject_name').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const section = document.getElementById('section').value;
+            const description = document.getElementById('description').value;
+
+            if (subjectName && date && time && section && description) {
+                schedule.push({ subjectName, date, time, section, description });
+                localStorage.setItem('schedule', JSON.stringify(schedule));
+                displaySchedule();
+                clearForm();
+            } else {
+                alert("Please fill in all fields.");
+            }
+        }
+
+        function saveChanges() {
+            const subjectName = document.getElementById('subject_name').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const section = document.getElementById('section').value;
+            const description = document.getElementById('description').value;
+
+            if (subjectName && date && time && section && description) {
+                schedule[editIndex] = { subjectName, date, time, section, description };
+                localStorage.setItem('schedule', JSON.stringify(schedule));
+                displaySchedule();
+                clearForm();
+                editIndex = null; // Reset edit mode
+                document.getElementById('action-button').textContent = 'Add Subject'; // Reset button text
+            } else {
+                alert("Please fill in all fields.");
+            }
+        }
+
+        function displaySchedule() {
+            const scheduleList = document.querySelector("#schedule-list tbody");
+            scheduleList.innerHTML = "";
+
+            schedule.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.subjectName}</td>
+                    <td>${item.date}</td>
+                    <td>${item.time}</td>
+                    <td>${item.section}</td>
+                    <td>${item.description}</td>
+                    <td>
+                        <button onclick="editSubject(${index})">Edit</button>
+                        <button onclick="deleteSubject(${index})">Delete</button>
+                    </td>
+                `;
+                scheduleList.appendChild(row);
+            });
+        }
+
+        function deleteSubject(index) {
+            schedule.splice(index, 1);
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+            displaySchedule();
+        }
+
+        function editSubject(index) {
+            const item = schedule[index];
+            document.getElementById('subject_name').value = item.subjectName;
+            document.getElementById('date').value = item.date;
+            document.getElementById('time').value = item.time;
+            document.getElementById('section').value = item.section;
+            document.getElementById('description').value = item.description;
+            editIndex = index; // Set the index of the item being edited
+            document.getElementById('action-button').textContent = 'Save Changes'; // Change button text
+        }
+
+        function clearForm() {
+            document.getElementById('subject_name').value = '';
+            document.getElementById('date').value = '';
+            document.getElementById('time').value = '';
+            document.getElementById('section').value = '';
+            document.getElementById('description').value = '';
+        }
+
+        // Initial display
+        displaySchedule();
+    </script>
+</body>
+</html>
