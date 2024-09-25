@@ -20,11 +20,18 @@
             margin-bottom: 10px;
         }
 
-        /* Container for form and schedule */
-        .form-container, .schedule-container {
+        /* Container for the main content */
+        .main-container {
+            display: flex;
+            justify-content: center;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px; /* Adjust max-width as needed */
             margin: 20px auto;
+        }
+
+        /* Form container */
+        .form-container {
+            width: 100%; /* Use full width of the container */
             padding: 15px;
             background: #fff;
             border-radius: 6px;
@@ -108,47 +115,129 @@
         td button:hover {
             background: #c82333;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 6px;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        .modal-header, .modal-footer {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #ddd;
+            text-align: right;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Mobile view adjustments */
+        @media (max-width: 768px) {
+            .modal {
+                display: flex; /* Show modal on mobile */
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Form to Add/Update Subject -->
-    <div class="form-container">
-        <h2>Manage Your Exam Schedule</h2>
-        <label for="subject_name">Subject Name:</label>
-        <input type="text" id="subject_name">
-        
-        <label for="date">Date:</label>
-        <input type="date" id="date">
-        
-        <label for="time">Time:</label>
-        <input type="time" id="time">
-        
-        <label for="section">Section:</label>
-        <input type="text" id="section">
-        
-        <label for="description">Description:</label>
-        <input type="text" id="description">
-        
-        <button id="action-button" onclick="handleAction()">Add Subject</button>
+    <!-- Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>Your Exam Schedule</h2>
+            </div>
+            <div class="modal-body">
+                <button id="sort-button" onclick="sortByDate()">Sort by Date & Time</button>
+                <table id="schedule-list">
+                    <thead>
+                        <tr>
+                            <th>Subject Name</th>
+                            <th>Date (Day)</th>
+                            <th>Time</th>
+                            <th>Section</th>
+                            <th>Professor Name</th>
+                            <th>Type of Exam</th>
+                            <th>Description</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal()">Close</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Schedule Display -->
-    <div class="schedule-container">
-        <h2>Your Exam Schedule</h2>
-        <button id="sort-button" onclick="sortByDate()">Sort by Date & Time</button>
-        <table id="schedule-list">
-            <thead>
-                <tr>
-                    <th>Subject Name</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Section</th>
-                    <th>Description</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Form to Add/Update Subject -->
+        <div class="form-container">
+            <h2>Manage Your Exam Schedule</h2>
+            <label for="subject_name">Subject Name:</label>
+            <input type="text" id="subject_name">
+
+            <label for="date">Date:</label>
+            <input type="date" id="date" onchange="updateDay()">
+            <span id="day-of-week">Day</span>
+
+            <label for="time">Time:</label>
+            <input type="time" id="time">
+
+            <label for="section">Section:</label>
+            <input type="text" id="section">
+
+            <label for="professor_name">Professor Name:</label>
+            <input type="text" id="professor_name">
+
+            <label for="type_of_exam">Type of Exam:</label>
+            <input type="text" id="type_of_exam">
+
+            <label for="description">Description:</label>
+            <input type="text" id="description">
+
+            <button id="action-button" onclick="handleAction()">Add Subject</button>
+            <button id="open-modal" onclick="openModal()">View Schedule</button>
+        </div>
     </div>
 
     <script>
@@ -169,10 +258,12 @@
             const date = document.getElementById('date').value;
             const time = document.getElementById('time').value;
             const section = document.getElementById('section').value;
+            const professorName = document.getElementById('professor_name').value;
+            const typeOfExam = document.getElementById('type_of_exam').value;
             const description = document.getElementById('description').value;
 
-            if (subjectName && date && time && section && description) {
-                schedule.push({ subjectName, date, time, section, description });
+            if (subjectName && date && time && section && professorName && typeOfExam && description) {
+                schedule.push({ subjectName, date, time, section, professorName, typeOfExam, description });
                 localStorage.setItem('schedule', JSON.stringify(schedule));
                 displaySchedule();
                 clearForm();
@@ -186,45 +277,20 @@
             const date = document.getElementById('date').value;
             const time = document.getElementById('time').value;
             const section = document.getElementById('section').value;
+            const professorName = document.getElementById('professor_name').value;
+            const typeOfExam = document.getElementById('type_of_exam').value;
             const description = document.getElementById('description').value;
 
-            if (subjectName && date && time && section && description) {
-                schedule[editIndex] = { subjectName, date, time, section, description };
+            if (subjectName && date && time && section && professorName && typeOfExam && description) {
+                schedule[editIndex] = { subjectName, date, time, section, professorName, typeOfExam, description };
                 localStorage.setItem('schedule', JSON.stringify(schedule));
                 displaySchedule();
                 clearForm();
-                editIndex = null; // Reset edit mode
-                document.getElementById('action-button').textContent = 'Add Subject'; // Reset button text
+                editIndex = null; // Reset the edit index
+                document.getElementById('action-button').innerText = 'Add Subject';
             } else {
                 alert("Please fill in all fields.");
             }
-        }
-
-        function displaySchedule() {
-            const scheduleList = document.querySelector("#schedule-list tbody");
-            scheduleList.innerHTML = "";
-
-            schedule.forEach((item, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.subjectName}</td>
-                    <td>${item.date}</td>
-                    <td>${item.time}</td>
-                    <td>${item.section}</td>
-                    <td>${item.description}</td>
-                    <td>
-                        <button onclick="editSubject(${index})">Edit</button>
-                        <button onclick="deleteSubject(${index})">Delete</button>
-                    </td>
-                `;
-                scheduleList.appendChild(row);
-            });
-        }
-
-        function deleteSubject(index) {
-            schedule.splice(index, 1);
-            localStorage.setItem('schedule', JSON.stringify(schedule));
-            displaySchedule();
         }
 
         function editSubject(index) {
@@ -233,9 +299,66 @@
             document.getElementById('date').value = item.date;
             document.getElementById('time').value = item.time;
             document.getElementById('section').value = item.section;
+            document.getElementById('professor_name').value = item.professorName;
+            document.getElementById('type_of_exam').value = item.typeOfExam;
             document.getElementById('description').value = item.description;
-            editIndex = index; // Set the index of the item being edited
-            document.getElementById('action-button').textContent = 'Save Changes'; // Change button text
+
+            editIndex = index;
+            document.getElementById('action-button').innerText = 'Save Changes';
+        }
+
+        function deleteSubject(index) {
+            schedule.splice(index, 1);
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+            displaySchedule();
+        }
+
+        function displaySchedule() {
+            const tableBody = document.querySelector('#schedule-list tbody');
+            tableBody.innerHTML = '';
+            schedule.forEach((item, index) => {
+                const dateObj = new Date(item.date);
+                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.subjectName}</td>
+                    <td>${item.date} (${dayOfWeek})</td>
+                    <td>${item.time}</td>
+                    <td>${item.section}</td>
+                    <td>${item.professorName}</td>
+                    <td>${item.typeOfExam}</td>
+                    <td>${item.description}</td>
+                    <td>
+                        <button onclick="editSubject(${index})">Edit</button>
+                        <button onclick="deleteSubject(${index})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function openModal() {
+            document.getElementById('scheduleModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('scheduleModal').style.display = 'none';
+        }
+
+        function updateDay() {
+            const dateInput = document.getElementById('date').value;
+            if (dateInput) {
+                const dateObj = new Date(dateInput);
+                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                document.getElementById('day-of-week').textContent = dayOfWeek;
+            }
+        }
+
+        function sortByDate() {
+            schedule.sort((a, b) => new Date(a.date) - new Date(b.date));
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+            displaySchedule();
         }
 
         function clearForm() {
@@ -243,21 +366,12 @@
             document.getElementById('date').value = '';
             document.getElementById('time').value = '';
             document.getElementById('section').value = '';
+            document.getElementById('professor_name').value = '';
+            document.getElementById('type_of_exam').value = '';
             document.getElementById('description').value = '';
         }
 
-        function sortByDate() {
-            schedule.sort((a, b) => {
-                // Combine date and time into a single Date object
-                const aDateTime = new Date(`${a.date}T${a.time}`);
-                const bDateTime = new Date(`${b.date}T${b.time}`);
-                return aDateTime - bDateTime;
-            });
-            localStorage.setItem('schedule', JSON.stringify(schedule));
-            displaySchedule();
-        }
-
-        // Initial display
+        // Display schedule on page load
         displaySchedule();
     </script>
 </body>
