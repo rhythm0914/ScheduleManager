@@ -135,6 +135,7 @@
     <!-- Schedule Display -->
     <div class="schedule-container">
         <h2>Your Exam Schedule</h2>
+        <button id="sort-button" onclick="sortByDate()">Sort by Date & Time</button>
         <table id="schedule-list">
             <thead>
                 <tr>
@@ -243,6 +244,17 @@
             document.getElementById('time').value = '';
             document.getElementById('section').value = '';
             document.getElementById('description').value = '';
+        }
+
+        function sortByDate() {
+            schedule.sort((a, b) => {
+                // Combine date and time into a single Date object
+                const aDateTime = new Date(`${a.date}T${a.time}`);
+                const bDateTime = new Date(`${b.date}T${b.time}`);
+                return aDateTime - bDateTime;
+            });
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+            displaySchedule();
         }
 
         // Initial display
